@@ -51,12 +51,17 @@ def handle_chat():
         return jsonify({"text": "Sorry, I encountered an error processing your request."}), 500
 
 
-@app.route("/", methods=["GET"])
+@app.route("/health", methods=["GET"])
 def healthcheck():
     return "CSMHelperBot is running!", 200
+
+@app.route("/", methods=["GET"])
+def root():
+    return "CSMHelperBot API - Use POST / for webhook integration", 200
 
 if __name__ == "__main__":
     # Get port from environment variable (for cloud deployment)
     port = int(os.environ.get("PORT", 8080))
+    logger.info(f"Starting CSMHelperBot on port {port}")
     # Run locally for testing
     app.run(host="0.0.0.0", port=port, debug=False)

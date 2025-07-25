@@ -16,5 +16,8 @@ COPY . .
 
 # Expose the port
 ENV PORT=8080
-CMD exec gunicorn --bind :$PORT --workers 2 --threads 8 app:app
+EXPOSE $PORT
+
+# Use a simpler startup command for better reliability
+CMD gunicorn --bind :$PORT --workers 1 --threads 4 --timeout 120 app:app
 
