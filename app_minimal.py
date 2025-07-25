@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-import pandas as pd
 import logging
 import os
 
@@ -7,41 +6,30 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize app first
+# Initialize app
 app = Flask(__name__)
 
-# Global variable for dataframe
-df = None
+# Sample data (no external file dependency)
+SAMPLE_DATA = {
+    "sample_account": "John Doe",
+    "test_company": "Jane Smith",
+    "demo_corp": "Bob Johnson"
+}
 
-def load_data():
-    """Load Excel data - called on first request"""
-    global df
-    if df is not None:
-        return df
-    
-    try:
-        df = pd.read_excel("accounts.xlsx")  # Columns: Account Name | Account CSM
-        df.columns = [c.strip() for c in df.columns]  # clean column names
-        logger.info(f"Loaded {len(df)} accounts from Excel file")
-    except Exception as e:
-        logger.error(f"Failed to load Excel file: {e}")
-        # Create a sample dataframe if Excel file is not available
-        df = pd.DataFrame({
-            "Account Name": ["sample_account", "test_company"],
-            "Account CSM": ["John Doe", "Jane Smith"]
-        })
-        logger.info("Using sample data due to Excel file error")
-    
-    return df
+@app.route("/health", methods=["GET"])
+def healthcheck():
+    logger.info("Health check requested")
+    return "CSMHelperBot is running!", 200
+
+@app.route("/", methods=["GET"])
+def root():
+    return "CSMHelperBot API - Use POST / for webhook integration", 200
 
 @app.route("/", methods=["POST"])
 def handle_chat():
     try:
         data = request.get_json(force=True)
         logger.info(f"Received request: {data}")
-
-        # Load data on first request
-        df = load_data()
 
         # Extract message text from Google Chat JSON
         message_text = data.get("message", {}).get("text", "").strip()
@@ -54,10 +42,9 @@ def handle_chat():
             account_name = parts[1].strip().lower()
             logger.info(f"Looking up CSM for account: {account_name}")
 
-            # Search in dataframe
-            match = df[df["Account Name"].str.lower() == account_name]
-            if not match.empty:
-                csm_name = match["Account CSM"].iloc[0]
+            # Search in sample data
+            if account_name in SAMPLE_DATA:
+                csm_name = SAMPLE_DATA[account_name]
                 reply = f"✅ CSM for '{account_name}' is: {csm_name}"
                 logger.info(f"Found CSM: {csm_name}")
             else:
@@ -69,18 +56,9 @@ def handle_chat():
         logger.error(f"Error processing request: {e}")
         return jsonify({"text": "Sorry, I encountered an error processing your request."}), 500
 
-
-@app.route("/health", methods=["GET"])
-def healthcheck():
-    return "CSMHelperBot is running!", 200
-
-@app.route("/", methods=["GET"])
-def root():
-    return "CSMHelperBot API - Use POST / for webhook integration", 200
-
 if __name__ == "__main__":
     # Get port from environment variable (for cloud deployment)
     port = int(os.environ.get("PORT", 8080))
     logger.info(f"Starting CSMHelperBot on port {port}")
     # Run locally for testing
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False) 

@@ -4,8 +4,11 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies (optional: pandas & openpyxl might need these)
-RUN apt-get update && apt-get install -y build-essential gcc && rm -rf /var/lib/apt/lists/*
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install
 COPY requirements.txt .
@@ -18,6 +21,6 @@ COPY . .
 ENV PORT=8080
 EXPOSE $PORT
 
-# Use a simpler startup command for better reliability
-CMD gunicorn --bind :$PORT --workers 1 --threads 4 --timeout 120 app:app
+# Use the minimal app for testing (no external file dependencies)
+CMD ["python", "app_minimal.py"]
 
